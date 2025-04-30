@@ -20,7 +20,7 @@ CREATE INDEX idx_date ON scheduler(date);
 
 var db *sql.DB
 
-func Init(dbFile string) error {
+func Init(dbFile string) (*sql.DB, error) {
 	// Проверка существования файла базы данных
 	_, err := os.Stat(dbFile)
 	install := false
@@ -31,16 +31,16 @@ func Init(dbFile string) error {
 	// Открываем базу данных
 	db, err = sql.Open("sqlite", dbFile)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Если файл не существовал, создаем таблицы
 	if install {
 		_, err := db.Exec(schema)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return db, nil
 }

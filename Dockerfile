@@ -17,7 +17,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o go_final_project .
 
 # Используем образ для запуска приложения
-FROM ubuntu
+FROM alpine
 
 # Устанавливаем зависимости 
 RUN apt-get update && apt-get install -y ca-certificates
@@ -29,7 +29,6 @@ COPY web ./web
 # Устанавливаем переменные окружения
 ENV TODO_PORT=7540
 ENV TODO_DBFILE=./scheduler.db
-ENV TODO_PASSWORD=1234
 
 # Открываем порт
 EXPOSE 7540

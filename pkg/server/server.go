@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -26,7 +25,7 @@ func Run() {
 	log.Println("Сервер запускается. Port:" + port)
 	err = http.ListenAndServe(":"+port, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 

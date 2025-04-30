@@ -15,20 +15,21 @@ func checkDate(task *db.Task) error {
 
 	// Если дата не указана, присваиваем текущую дату
 	if task.Date == "" {
-		task.Date = now.Format("20060102")
+		task.Date = now.Format(layout)
 	}
 
+	tNow, _ := time.Parse(layout, now.Format(layout))
 	// Проверяем, корректна ли указанная дата
-	t, err := time.Parse("20060102", task.Date)
+	t, err := time.Parse(layout, task.Date)
 	if err != nil {
 		return fmt.Errorf("Дата представлена в неправильном формате: %v", err)
 	}
 
 	// если сегодня (now) больше task.Date (t)
-	if afterNow(now, t) {
-		if len(task.Repeat) == 0 {
+	if afterNow(tNow, t) {
+		if task.Repeat == "" {
 			// если правила повторения нет, то берём сегодняшнее число
-			task.Date = now.Format("20060102")
+			task.Date = now.Format(layout)
 		} else {
 			// в противном случае, берём вычисленную ранее следующую дату
 			next, err := NextDate(now, task.Date, task.Repeat)
@@ -38,7 +39,11 @@ func checkDate(task *db.Task) error {
 			task.Date = next
 		}
 	}
-
+	//test, _ := time.Parse(layout, task.Date)
+	//if afterNow(tNow, test) {
+	//	return fmt.Errorf("Дата не может быть меньше сегодняшней")
+	//}
+	//
 	return nil
 }
 
@@ -46,32 +51,37 @@ func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var task db.Task
 
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
-		writeJson(w, map[string]string{"error": "Ошибка десериализации JSON"})
+		writeJson(w, map[string]string{"error": "Ошибка десериализации JSON"}, http.StatusBadRequest)
 		return
 	}
 
 	if task.Title == "" {
-		writeJson(w, map[string]string{"error": "Не указан заголовок задачи"})
+		writeJson(w, map[string]string{"error": "Не указан заголовок задачи"}, http.StatusBadRequest)
 		return
 	}
 
 	// Проверка даты задачи
 	if err := checkDate(&task); err != nil {
-		writeJson(w, map[string]string{"error": fmt.Sprintf("%v", err)})
+		writeJson(w, map[string]string{"error": err.Error()}, http.StatusBadRequest)
 		return
 	}
 
 	// Добавляем задачу в базу данных
 	id, err := db.AddTask(&task)
 	if err != nil {
-		writeJson(w, map[string]string{"error": fmt.Sprintf("%v", err)})
+		writeJson(w, map[string]string{"error": fmt.Sprintf("Ошибка добавления задачи в базу данных: %v", err)}, http.StatusInternalServerError)
 		return
 	}
 
-	writeJson(w, map[string]string{"id": fmt.Sprintf("%d", id)})
+	writeJson(w, map[string]int64{"id": id}, http.StatusOK)
 }
 
-func writeJson(w http.ResponseWriter, data any) {
+func writeJson(w http.ResponseWriter, data any, status int) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	json.NewEncoder(w).Encode(data)
+	w.WriteHeader(status)
+
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		http.Error(w, "Ошибка при обработке JSON", http.StatusInternalServerError)
+		return
+	}
 }

@@ -13,10 +13,8 @@ type TasksResp struct {
 func tasksHandler(w http.ResponseWriter, r *http.Request) {
 	tasks, err := db.Tasks(50) // в параметре максимальное количество записей
 	if err != nil {
-		writeJson(w, map[string]string{"error": fmt.Sprintf("%v", err)})
+		writeJson(w, map[string]string{"error": fmt.Sprintf("%v", err)}, http.StatusInternalServerError)
 		return
 	}
-	writeJson(w, TasksResp{
-		Tasks: tasks,
-	})
+	writeJson(w, TasksResp{Tasks: tasks}, http.StatusOK)
 }
