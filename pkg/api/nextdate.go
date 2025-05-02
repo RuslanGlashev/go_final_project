@@ -52,11 +52,13 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 	case "y":
 		// Если правило ежегодое
 
-		date = date.AddDate(1, 0, 0) // Добавляем 1 год
-		if afterNow(date, now) {
-			break
+		for {
+			date = date.AddDate(1, 0, 0) // Добавляем 1 год
+
+			if date.Year() >= now.Year() {
+				return date.Format(layout), nil
+			}
 		}
-		return date.Format(layout), nil
 
 	case "m", "w":
 		return "", fmt.Errorf("Некорректный запрос")
@@ -65,9 +67,6 @@ func NextDate(now time.Time, dstart string, repeat string) (string, error) {
 		return "", fmt.Errorf("Неизвестное правило")
 
 	}
-
-	// Преобразуем дату в строку в формате 20060102 и выводим результат
-	return date.Format(layout), nil
 }
 
 // nextDayHandler обрабатывает запросы к /api/nextdate

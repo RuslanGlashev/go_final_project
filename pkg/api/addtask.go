@@ -39,11 +39,16 @@ func checkDate(task *db.Task) error {
 			task.Date = next
 		}
 	}
-	//test, _ := time.Parse(layout, task.Date)
-	//if afterNow(tNow, test) {
-	//	return fmt.Errorf("Дата не может быть меньше сегодняшней")
-	//}
-	//
+	test, err := time.Parse(layout, task.Date)
+	if err != nil {
+		return fmt.Errorf("Дата представлена в неправильном формате: %v", err)
+	}
+	if afterNow(tNow, test) {
+		next, err := NextDate(now, task.Date, task.Repeat)
+		task.Date = next
+		return err
+	}
+
 	return nil
 }
 
